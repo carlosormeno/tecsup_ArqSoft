@@ -37,6 +37,7 @@ public interface RepositorioMatricula {
 
 public class ServicioMatricula {
     private final RepositorioMatricula repositorio;
+    private final NotificadorMatricula notificador;
 
     public ServicioMatricula(RepositorioMatricula repositorio,
                              NotificadorMatricula notificador) {
@@ -45,6 +46,40 @@ public class ServicioMatricula {
     }
 }
 ```
+
+En este caso, `ServicioMatricula` es el modulo de alto nivel porque contiene el flujo principal del caso de uso: validar, calcular, registrar y notificar una matricula.
+
+`RepositorioMatriculaMemoria` es un modulo de bajo nivel porque define un detalle tecnico: guardar las matriculas en una lista en memoria.
+
+La regla de DIP es que el modulo de alto nivel no debe depender directamente del modulo de bajo nivel. Por eso el servicio no hace esto:
+
+```java
+private final RepositorioMatriculaMemoria repositorio = new RepositorioMatriculaMemoria();
+```
+
+En su lugar, depende de la abstraccion:
+
+```java
+private final RepositorioMatricula repositorio;
+```
+
+La implementacion concreta se entrega desde afuera, al crear el servicio:
+
+```java
+RepositorioMatricula repositorio = new RepositorioMatriculaMemoria();
+NotificadorMatricula notificador = new NotificadorConsola();
+
+ServicioMatricula servicio = new ServicioMatricula(repositorio, notificador);
+```
+
+De esta forma, si luego se crea un repositorio para MySQL, el servicio no cambia:
+
+```java
+RepositorioMatricula repositorio = new RepositorioMatriculaMySQL();
+ServicioMatricula servicio = new ServicioMatricula(repositorio, notificador);
+```
+
+El mismo criterio se aplica a `NotificadorMatricula`: el servicio no depende de `NotificadorConsola` ni de un correo real, sino del contrato `NotificadorMatricula`.
 
 ---
 
@@ -55,6 +90,8 @@ DIP indica que los modulos de alto nivel no deben depender de modulos de bajo ni
 Con esta decision:
 
 - `ServicioMatricula` no conoce si se guarda en memoria o base de datos.
+- `ServicioMatricula` no instancia `RepositorioMatriculaMemoria`; recibe un `RepositorioMatricula`.
+- `ServicioMatricula` no instancia `NotificadorConsola`; recibe un `NotificadorMatricula`.
 - La implementacion puede cambiar sin modificar el caso de uso.
 - Las pruebas pueden usar un repositorio falso o en memoria.
 
