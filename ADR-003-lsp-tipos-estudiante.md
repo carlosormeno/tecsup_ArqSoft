@@ -49,6 +49,43 @@ public interface EstudianteConBeca extends Estudiante {
 }
 ```
 
+`EstudianteConBeca extends Estudiante` significa que todo estudiante con beca tambien es un estudiante. Por eso `EstudianteConBeca` hereda las operaciones `codigo()`, `nombre()` y `puedeMatricularseEn(Curso curso)`, aunque no aparezcan repetidas dentro de la interfaz especializada.
+
+La separacion entre tipos se hace al crear la clase concreta:
+
+```java
+public class EstudianteRegular implements Estudiante {
+    // Solo cumple el contrato general de cualquier estudiante.
+}
+
+public class EstudianteBecado implements EstudianteConBeca {
+    // Cumple el contrato general y ademas el contrato de beca.
+}
+```
+
+Con este diseno, el servicio de matricula no necesita saber si recibe un estudiante regular o becado. Solo depende del contrato general:
+
+```java
+public <E extends Estudiante> Matricula matricular(E estudiante, Curso curso,
+                                                   CalculadorCostoMatricula<? super E> calculador) {
+    if (!estudiante.puedeMatricularseEn(curso)) {
+        throw new IllegalArgumentException("No cumple las condiciones");
+    }
+
+    // Continua el flujo de matricula.
+}
+```
+
+En cambio, las operaciones de beca deben recibir el contrato especializado:
+
+```java
+public void renovar(EstudianteConBeca estudiante) {
+    estudiante.renovarBeca();
+}
+```
+
+Asi, un `EstudianteRegular` puede sustituir a `Estudiante` en el flujo de matricula, pero no puede ser usado donde se requiere `EstudianteConBeca`. Esa restriccion es correcta porque no todo estudiante tiene beca.
+
 ---
 
 ## Principio SOLID aplicado
@@ -58,7 +95,7 @@ LSP indica que los subtipos deben poder sustituir a sus tipos base sin romper el
 Con esta decision:
 
 - `EstudianteRegular` puede usarse como `Estudiante` sin fallar.
-- `EstudianteBecado` puede usarse como `EstudianteConBeca`.
+- `EstudianteBecado` puede usarse como `Estudiante` y tambien como `EstudianteConBeca`.
 - El compilador impide renovar beca sobre un estudiante que no tiene ese contrato.
 
 ---
